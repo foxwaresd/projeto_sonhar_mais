@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base href="$FLUTTER_BASE_HREF">
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="description" content="Banco de óvulos Sonhar+">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="Sonhar+">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+  <link rel="icon" type="image/png" href="favicon.png"/>
+  <title>Sonhar+</title>
+  <link rel="manifest" href="manifest.json">
+
+  <script>
+    var serviceWorkerVersion = null;
+  </script>
+  <script src="flutter.js" defer></script>
+</head>
+<body>
+
+<script>
+  window.addEventListener('load', function(ev) {
+    _flutter.loader.loadEntrypoint({
+      serviceWorker: {
+        serviceWorkerVersion: serviceWorkerVersion,
+      },
+      onEntrypointLoaded: function(engineInitializer) {
+        engineInitializer.initializeEngine().then(function(appRunner) {
+          appRunner.runApp();
+        });
+      }
+    });
+  });
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.7.4/dist/tf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+
+<script type="text/javascript">
+  const _flutter_face_detection_channel = new EventTarget();
+  window._flutter_face_detection_channel = _flutter_face_detection_channel;
+
+  // --- ADIÇÃO 1: Variável para controlar o loop ---
+  let animationFrameId = null;
+
+  // --- ADIÇÃO 2: Função para ser chamada pelo Flutter ao sair da tela ---
+  window.stopFaceDetection = () => {
+    if (animationFrameId) {
+      cancelAnimationFrame(animationFrameId);
+      animationFrameId = null;
+      console.log('[DETECÇÃO] Loop de detecção facial PARADO pelo Flutter.');
+    }
+  };
+
+  const findVideoElement = (id, retries = 10, delay = 500) => {
+    return new Promise(resolve => {
+      const check = () => {
+        const video = document.getElementById(id);
+        if (video && video.readyState >= 2) { resolve(video); }
+        else if (retries > 0) { setTimeout(check, delay); retries--; }
+        else { resolve(null); }
+      };
+      check();
+    });
+  };
+
+  window.startFaceDetection = async (videoElementId) => {
+    // Para o loop anterior, caso um já exista
+    if (animationFrameId) {
+        window.stopFaceDetection();
+    }
+
+    try {
+      // Usando WebGL para melhor performance
+      await tf.setBackend('webgl');
+      await tf.ready();
+
+      const video = await findVideoElement(videoElementId);
+      if (!video) return;
+
+      await faceapi.nets.ssdMobilenetv1.loadFromUri('models');
+      const options = new faceapi.SsdMobilenetv1Options();
+
+      const detectFace = async () => {
+        if (!video.paused && !video.ended) {
+          const detection = await faceapi.detectSingleFace(video, options);
+          let isCentralized = false;
+          if (detection) {
+             // ... sua lógica de centralização ...
+             isCentralized = true;
+          }
+          _flutter_face_detection_channel.dispatchEvent(new CustomEvent("message", { detail: isCentralized ? 1 : 0 }));
+        }
+
+        // --- MUDANÇA 3: Armazena o ID do loop e continua a animação ---
+        // A verificação `if (animationFrameId !== null)` garante que o loop só continue se não tiver sido cancelado
+        if (animationFrameId !== null) {
+            animationFrameId = requestAnimationFrame(detectFace);
+        }
+      };
+
+      // Inicia o loop
+      animationFrameId = requestAnimationFrame(detectFace);
+
+    } catch (error) {
+      console.error('Erro ao iniciar a detecção:', error);
+      _flutter_face_detection_channel.dispatchEvent(new CustomEvent('message', { detail: -1 }));
+    }
+  };
+</script>
+</body>
+</html>

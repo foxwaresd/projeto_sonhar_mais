@@ -1,0 +1,15 @@
+{
+  "projects": {
+    "default": "sonhar-mais"
+  },
+  "targets": {
+    "sonhar-mais": {
+      "hosting": {
+        "sonhar-mais-teste": [
+          "sonhar-mais-teste"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}
