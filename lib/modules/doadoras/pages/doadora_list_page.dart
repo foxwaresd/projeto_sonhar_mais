@@ -7,6 +7,8 @@ import 'package:flutter/material.dart';
 import '../../../common/widgets/filters.dart';
 import 'widgets/doadora_detail_dialog.dart';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
 class Doadora {
   final String id;
   final String prontuarioEletronico;
@@ -22,7 +24,6 @@ class Doadora {
   final String cabeloTextura;
   final String raca;
   final String signo;
-  // Renamed from escalaFitzpatric to fitzpatrick for direct access
   final String fitzpatrick;
   final String formatoRosto;
   final String profissao;
@@ -32,23 +33,18 @@ class Doadora {
   final String estadoCivil;
   final String filhos;
   final String irmaos;
-  // Renamed from filhoAdotivo to filhaAdotiva for direct access
   final String filhaAdotiva;
-  // Renamed from gemeosNaFamilia to gemeos for direct access
   final String gemeos;
   final String qualidades;
-  // Direct mapping for historicoSaude fields
   final String historicoSaudeAudicao;
   final String historicoSaudeVisao;
   final String historicoSaudeAlergia;
   final String historicoSaudeAsma;
-  // Renamed from saudeCronica to historicoSaudeDoencaCronica for direct access
   final String historicoSaudeDoencaCronica;
   final String historicoSaudeFumante;
   final String historicoSaudeDrogas;
-  final String saudeAlcool; // This one seems to be `saudeAlcool` in your definition
+  final String saudeAlcool;
   final List<double>? faceEmbedding;
-  // Direct mapping for historicoFamiliar fields
   final String historicoFamiliarAutismo;
   final String historicoFamiliarDepressao;
   final String historicoFamiliarEsquizofrenia;
@@ -61,13 +57,11 @@ class Doadora {
   final String historicoFamiliarDistrofiaMuscular;
   final String historicoFamiliarAtrofiaMuscular;
   final String historicoFamiliarDoencaIsquemica;
-  final String historicoFamiliarNeoplasia; // Changed from Neoplasias to Neoplasia
+  final String historicoFamiliarNeoplasia;
   final String historicoFamiliarDeficienciaFisica;
   final String historicoFamiliarDeficienciaMental;
-  final String historicoFamiliarDoencaGenetica; // Changed from DoencasGeneticas to DoencaGenetica
+  final String historicoFamiliarDoencaGenetica;
 
-  // Direct mapping for historicoDoadora fields
-  // Note: 'historicoDoadora' was used for general epilepsy, now specifically for historicoDoadoraEpilepsia
   final String historicoDoadoraEpilepsia;
   final String historicoDoadoraHipertensao;
   final String historicoDoadoraDiabetesMellitus;
@@ -77,13 +71,12 @@ class Doadora {
   final String historicoDoadoraLabioLeporino;
   final String historicoDoadoraEspinhaBifida;
   final String historicoDoadoraDeficienciaMental;
-  final String historicoDoadoraMalFormacaoCardica; // Corrected typo from Cardiaca to Cardica for consistency
-  final String historicoDoadora; // This seems to be a general field based on your controller list
+  final String historicoDoadoraMalFormacaoCardica;
+  final String historicoDoadora;
 
   final List<String> exames;
   final String status;
 
-  // New fields
   final String assinatura;
   final String email;
   final String telefone;
@@ -98,8 +91,10 @@ class Doadora {
   final String motivo;
   final String declaroVeracidade;
   final String caracteristicas1;
-  final String idioma; // Added from controller list
-  final String ovulos; // Added from controller list
+  final String idioma;
+  int ovosDisponiveis;
+  final DateTime? createdAt; // NEW: DateTime for creation timestamp
+
   final Map<String, dynamic> rawData;
 
   Doadora({
@@ -117,7 +112,7 @@ class Doadora {
     required this.cabeloTextura,
     required this.raca,
     required this.signo,
-    required this.fitzpatrick, // Updated
+    required this.fitzpatrick,
     this.formatoRosto = '',
     required this.profissao,
     required this.hobby,
@@ -126,45 +121,45 @@ class Doadora {
     required this.estadoCivil,
     required this.filhos,
     required this.irmaos,
-    required this.filhaAdotiva, // Updated
-    required this.gemeos, // Updated
+    required this.filhaAdotiva,
+    required this.gemeos,
     required this.qualidades,
-    required this.historicoSaudeAudicao, // Updated
-    required this.historicoSaudeVisao, // Updated
-    required this.historicoSaudeAlergia, // Updated
-    required this.historicoSaudeAsma, // Updated
-    required this.historicoSaudeDoencaCronica, // Updated
-    required this.historicoSaudeFumante, // Updated
-    required this.historicoSaudeDrogas, // Updated
+    required this.historicoSaudeAudicao,
+    required this.historicoSaudeVisao,
+    required this.historicoSaudeAlergia,
+    required this.historicoSaudeAsma,
+    required this.historicoSaudeDoencaCronica,
+    required this.historicoSaudeFumante,
+    required this.historicoSaudeDrogas,
     required this.saudeAlcool,
-    required this.historicoFamiliarAutismo, // Updated
-    required this.historicoFamiliarDepressao, // Updated
-    required this.historicoFamiliarEsquizofrenia, // Updated
-    required this.historicoFamiliarAnemiaFalciforme, // Updated
-    required this.historicoFamiliarTalassemia, // Updated
-    required this.historicoFamiliarFibroseCistica, // Updated
-    required this.historicoFamiliarDiabetesMelittus, // Updated
-    required this.historicoFamiliarEpilepsia, // Updated
-    required this.historicoFamiliarHipertensao, // Updated
-    required this.historicoFamiliarDistrofiaMuscular, // Updated
-    required this.historicoFamiliarAtrofiaMuscular, // Updated
-    required this.historicoFamiliarDoencaIsquemica, // Updated
-    required this.historicoFamiliarNeoplasia, // Updated
-    required this.historicoFamiliarDeficienciaFisica, // Updated
-    required this.historicoFamiliarDeficienciaMental, // Updated
-    required this.historicoFamiliarDoencaGenetica, // Updated
+    this.historicoFamiliarAutismo = '',
+    this.historicoFamiliarDepressao = '',
+    this.historicoFamiliarEsquizofrenia = '',
+    this.historicoFamiliarAnemiaFalciforme = '',
+    this.historicoFamiliarTalassemia = '',
+    this.historicoFamiliarFibroseCistica = '',
+    this.historicoFamiliarDiabetesMelittus = '',
+    this.historicoFamiliarEpilepsia = '',
+    this.historicoFamiliarHipertensao = '',
+    this.historicoFamiliarDistrofiaMuscular = '',
+    this.historicoFamiliarAtrofiaMuscular = '',
+    this.historicoFamiliarDoencaIsquemica = '',
+    this.historicoFamiliarNeoplasia = '',
+    this.historicoFamiliarDeficienciaFisica = '',
+    this.historicoFamiliarDeficienciaMental = '',
+    this.historicoFamiliarDoencaGenetica = '',
 
-    required this.historicoDoadoraEpilepsia, // Updated
-    required this.historicoDoadoraHipertensao, // Updated
-    required this.historicoDoadoraDiabetesMellitus, // Updated
-    required this.historicoDoadoraDeficienciaFisica, // Updated
-    required this.historicoDoadoraDoencasGeneticas, // Updated
-    required this.historicoDoadorasNeoplasias, // Updated
-    required this.historicoDoadoraLabioLeporino, // Updated
-    required this.historicoDoadoraEspinhaBifida, // Updated
-    required this.historicoDoadoraDeficienciaMental, // Updated
-    required this.historicoDoadoraMalFormacaoCardica, // Updated
-    required this.historicoDoadora, // Updated
+    this.historicoDoadoraEpilepsia = '',
+    this.historicoDoadoraHipertensao = '',
+    this.historicoDoadoraDiabetesMellitus = '',
+    this.historicoDoadoraDeficienciaFisica = '',
+    this.historicoDoadoraDoencasGeneticas = '',
+    this.historicoDoadorasNeoplasias = '',
+    this.historicoDoadoraLabioLeporino = '',
+    this.historicoDoadoraEspinhaBifida = '',
+    this.historicoDoadoraDeficienciaMental = '',
+    this.historicoDoadoraMalFormacaoCardica = '',
+    this.historicoDoadora = '',
 
     required this.exames,
     this.status = 'Pendente Punção',
@@ -184,12 +179,12 @@ class Doadora {
     required this.caracteristicas1,
     required this.rawData,
     this.idioma = '',
-    this.ovulos = '',
+    this.ovosDisponiveis = 0,
     this.faceEmbedding,
+    this.createdAt, // NEW: Add to constructor
   });
 
   factory Doadora.fromFirestore(Map<String, dynamic> data, String id) {
-    // Certifique-se de que o faceEmbedding está sendo parseado aqui
     List<double>? parsedFaceEmbedding;
     if (data['faceEmbedding'] is List) {
       try {
@@ -197,9 +192,23 @@ class Doadora {
             .map((e) => (e as num).toDouble())
             .toList();
       } catch (e) {
-        print('Erro ao parsear faceEmbedding para Doadora ID $id: $e');
+        debugPrint('Erro ao parsear faceEmbedding para Doadora ID $id: $e');
       }
     }
+
+    int ovosDisponiveis = 0;
+    if (data['quantidadeOvos'] is num) {
+      ovosDisponiveis = (data['quantidadeOvos'] as num).toInt();
+    } else if (data['quantidadeOvos'] is String) {
+      ovosDisponiveis = int.tryParse(data['quantidadeOvos']) ?? 0;
+    }
+
+    // NEW: Parse createdAt Timestamp
+    DateTime? createdAt;
+    if (data['createdAt'] is Timestamp) {
+      createdAt = (data['createdAt'] as Timestamp).toDate();
+    }
+
     return Doadora(
       faceEmbedding: parsedFaceEmbedding,
       id: id,
@@ -216,7 +225,7 @@ class Doadora {
       cabeloTextura: data['tipoCabelo1'] ?? '',
       raca: data['raca1'] ?? '',
       signo: data['signo'] ?? '',
-      fitzpatrick: data['fitzpatrick'] ?? '', // Updated
+      fitzpatrick: data['fitzpatrick'] ?? '',
       formatoRosto: data['formatoRosto'] ?? '',
       profissao: data['profissao'] ?? '',
       hobby: data['hobbies'] ?? '',
@@ -225,45 +234,45 @@ class Doadora {
       estadoCivil: data['estadoCivil'] ?? '',
       filhos: data['filhos'] ?? '',
       irmaos: data['irmaos'] ?? '',
-      filhaAdotiva: data['filhaAdotiva'] ?? '', // Updated
-      gemeos: data['gemeos'] ?? '', // Updated
+      filhaAdotiva: data['filhaAdotiva'] ?? '',
+      gemeos: data['gemeos'] ?? '',
       qualidades: data['qualidades'] ?? '',
-      historicoSaudeAudicao: data['historicoSaudeAudicao'] ?? '', // Updated
-      historicoSaudeVisao: data['historicoSaudeVisao'] ?? '', // Updated
-      historicoSaudeAlergia: data['historicoSaudeAlergia'] ?? '', // Updated
-      historicoSaudeAsma: data['historicoSaudeAsma'] ?? '', // Updated
-      historicoSaudeDoencaCronica: data['historicoSaudeDoencaCronica'] ?? '', // Updated
-      historicoSaudeFumante: data['historicoSaudeFumante'] ?? '', // Updated
-      historicoSaudeDrogas: data['historicoSaudeDrogas'] ?? '', // Updated
+      historicoSaudeAudicao: data['historicoSaudeAudicao'] ?? '',
+      historicoSaudeVisao: data['historicoSaudeVisao'] ?? '',
+      historicoSaudeAlergia: data['historicoSaudeAlergia'] ?? '',
+      historicoSaudeAsma: data['historicoSaudeAsma'] ?? '',
+      historicoSaudeDoencaCronica: data['historicoSaudeDoencaCronica'] ?? '',
+      historicoSaudeFumante: data['historicoSaudeFumante'] ?? '',
+      historicoSaudeDrogas: data['historicoSaudeDrogas'] ?? '',
       saudeAlcool: data['historicoSaudeAlcool'] ?? '',
-      historicoFamiliarAutismo: data['historicoFamiliarAutismo'] ?? '', // Updated
-      historicoFamiliarDepressao: data['historicoFamiliarDepressao'] ?? '', // Updated
-      historicoFamiliarEsquizofrenia: data['historicoFamiliarEsquizofrenia'] ?? '', // Updated
-      historicoFamiliarAnemiaFalciforme: data['historicoFamiliarAnemiaFalciforme'] ?? '', // Updated
-      historicoFamiliarTalassemia: data['historicoFamiliarTalassemia'] ?? '', // Updated
-      historicoFamiliarFibroseCistica: data['historicoFamiliarFibroseCistica'] ?? '', // Updated
-      historicoFamiliarDiabetesMelittus: data['historicoFamiliarDiabetesMelittus'] ?? '', // Updated
-      historicoFamiliarEpilepsia: data['historicoFamiliarEpilepsia'] ?? '', // Updated
-      historicoFamiliarHipertensao: data['historicoFamiliarHipertensao'] ?? '', // Updated
-      historicoFamiliarDistrofiaMuscular: data['historicoFamiliarDistrofiaMuscular'] ?? '', // Updated
-      historicoFamiliarAtrofiaMuscular: data['historicoFamiliarAtrofiaMuscular'] ?? '', // Updated
-      historicoFamiliarDoencaIsquemica: data['historicoFamiliarDoencaIsquemica'] ?? '', // Updated
-      historicoFamiliarNeoplasia: data['historicoFamiliarNeoplasia'] ?? '', // Updated
-      historicoFamiliarDeficienciaFisica: data['historicoFamiliarDeficienciaFisica'] ?? '', // Updated
-      historicoFamiliarDeficienciaMental: data['historicoFamiliarDeficienciaMental'] ?? '', // Updated
-      historicoFamiliarDoencaGenetica: data['historicoFamiliarDoençaGenetica'] ?? '', // Updated
+      historicoFamiliarAutismo: data['historicoFamiliarAutismo'] ?? '',
+      historicoFamiliarDepressao: data['historicoFamiliarDepressao'] ?? '',
+      historicoFamiliarEsquizofrenia: data['historicoFamiliarEsquizofrenia'] ?? '',
+      historicoFamiliarAnemiaFalciforme: data['historicoFamiliarAnemiaFalciforme'] ?? '',
+      historicoFamiliarTalassemia: data['historicoFamiliarTalassemia'] ?? '',
+      historicoFamiliarFibroseCistica: data['historicoFamiliarFibroseCistica'] ?? '',
+      historicoFamiliarDiabetesMelittus: data['historicoFamiliarDiabetesMelittus'] ?? '',
+      historicoFamiliarEpilepsia: data['historicoFamiliarEpilepsia'] ?? '',
+      historicoFamiliarHipertensao: data['historicoFamiliarHipertensao'] ?? '',
+      historicoFamiliarDistrofiaMuscular: data['historicoFamiliarDistrofiaMuscular'] ?? '',
+      historicoFamiliarAtrofiaMuscular: data['historicoFamiliarAtrofiaMuscular'] ?? '',
+      historicoFamiliarDoencaIsquemica: data['historicoFamiliarDoencaIsquemica'] ?? '',
+      historicoFamiliarNeoplasia: data['historicoFamiliarNeoplasia'] ?? '',
+      historicoFamiliarDeficienciaFisica: data['historicoFamiliarDeficienciaFisica'] ?? '',
+      historicoFamiliarDeficienciaMental: data['historicoFamiliarDeficienciaMental'] ?? '',
+      historicoFamiliarDoencaGenetica: data['historicoFamiliarDoençaGenetica'] ?? '',
 
-      historicoDoadoraEpilepsia: data['historicoDoadora'] ?? '', // Updated based on your mapping
-      historicoDoadoraHipertensao: data['historicoDoadoraHipertensao'] ?? '', // Updated
-      historicoDoadoraDiabetesMellitus: data['historicoDoadoraDiabetesMellitus'] ?? '', // Updated
-      historicoDoadoraDeficienciaFisica: data['historicoDoadoraDeficienciaFisica'] ?? '', // Updated
-      historicoDoadoraDoencasGeneticas: data['historicoDoadoraDoencasGeneticas'] ?? '', // Updated
-      historicoDoadorasNeoplasias: data['historicoDoadorasNeoplasias'] ?? '', // Updated
-      historicoDoadoraLabioLeporino: data['historicoDoadoraLabioLeporino'] ?? '', // Updated
-      historicoDoadoraEspinhaBifida: data['historicoDoadoraEspinhaBifida'] ?? '', // Updated
-      historicoDoadoraDeficienciaMental: data['historicoDoadoraDeficienciaMental'] ?? '', // Updated
-      historicoDoadoraMalFormacaoCardica: data['historicoDoadoraMalFormacaoCardica'] ?? '', // Updated
-      historicoDoadora: data['historicoDoadora'] ?? '', // If this is a general field, keep it.
+      historicoDoadoraEpilepsia: data['historicoDoadoraEpilepsia'] ?? '',
+      historicoDoadoraHipertensao: data['historicoDoadoraHipertensao'] ?? '',
+      historicoDoadoraDiabetesMellitus: data['historicoDoadoraDiabetesMellitus'] ?? '',
+      historicoDoadoraDeficienciaFisica: data['historicoDoadoraDeficienciaFisica'] ?? '',
+      historicoDoadoraDoencasGeneticas: data['historicoDoadoraDoencasGeneticas'] ?? '',
+      historicoDoadorasNeoplasias: data['historicoDoadorasNeoplasias'] ?? '',
+      historicoDoadoraLabioLeporino: data['historicoDoadoraLabioLeporino'] ?? '',
+      historicoDoadoraEspinhaBifida: data['historicoDoadoraEspinhaBifida'] ?? '',
+      historicoDoadoraDeficienciaMental: data['historicoDoadoraDeficienciaMental'] ?? '',
+      historicoDoadoraMalFormacaoCardica: data['historicoDoadoraMalFormacaoCardica'] ?? '',
+      historicoDoadora: data['historicoDoadora'] ?? '',
 
       exames: (data['examesFeitos'] as String?)?.split(', ').toList() ?? [],
       status: data['status'] == '' ? 'Pendente Punção' : data['status'],
@@ -283,8 +292,95 @@ class Doadora {
       caracteristicas1: data['caracteristicas1'] ?? '',
       rawData: data,
       idioma: data['idioma'] ?? '',
-      ovulos: data['ovulos'] ?? '',
+      ovosDisponiveis: ovosDisponiveis,
+      createdAt: createdAt, // NEW: Assign parsed createdAt
     );
+  }
+
+  // Method to convert to Firestore. This is important for updates.
+  Map<String, dynamic> toFirestore() {
+    return {
+      'prontuarioEletronico': prontuarioEletronico,
+      'nomeCompleto': nome,
+      'fotoPerfil': foto,
+      'observacao': observacao,
+      'idade': idade,
+      'peso1': peso,
+      'altura1': altura,
+      'tipoSanguineo1': tipoSanguineo,
+      'corOlhos1': olhos,
+      'corCabelo1': cabeloCor,
+      'tipoCabelo1': cabeloTextura,
+      'raca1': raca,
+      'signo': signo,
+      'fitzpatrick': fitzpatrick,
+      'formatoRosto': formatoRosto,
+      'profissao': profissao,
+      'hobbies': hobby,
+      'atividadesFisicas': atividadeFisica,
+      'escolaridade': escolaridade,
+      'estadoCivil': estadoCivil,
+      'filhos': filhos,
+      'irmaos': irmaos,
+      'filhaAdotiva': filhaAdotiva,
+      'gemeos': gemeos,
+      'qualidades': qualidades,
+      'historicoSaudeAudicao': historicoSaudeAudicao,
+      'historicoSaudeVisao': historicoSaudeVisao,
+      'historicoSaudeAlergia': historicoSaudeAlergia,
+      'historicoSaudeAsma': historicoSaudeAsma,
+      'historicoSaudeDoencaCronica': historicoSaudeDoencaCronica,
+      'historicoSaudeFumante': historicoSaudeFumante,
+      'historicoSaudeDrogas': historicoSaudeDrogas,
+      'historicoSaudeAlcool': saudeAlcool,
+      'faceEmbedding': faceEmbedding,
+      'historicoFamiliarAutismo': historicoFamiliarAutismo,
+      'historicoFamiliarDepressao': historicoFamiliarDepressao,
+      'historicoFamiliarEsquizofrenia': historicoFamiliarEsquizofrenia,
+      'historicoFamiliarAnemiaFalciforme': historicoFamiliarAnemiaFalciforme,
+      'historicoFamiliarTalassemia': historicoFamiliarTalassemia,
+      'historicoFamiliarFibroseCistica': historicoFamiliarFibroseCistica,
+      'historicoFamiliarDiabetesMelittus': historicoFamiliarDiabetesMelittus,
+      'historicoFamiliarEpilepsia': historicoFamiliarEpilepsia,
+      'historicoFamiliarHipertensao': historicoFamiliarHipertensao,
+      'historicoFamiliarDistrofiaMuscular': historicoFamiliarDistrofiaMuscular,
+      'historicoFamiliarAtrofiaMuscular': historicoFamiliarAtrofiaMuscular,
+      'historicoFamiliarDoencaIsquemica': historicoFamiliarDoencaIsquemica,
+      'historicoFamiliarNeoplasia': historicoFamiliarNeoplasia,
+      'historicoFamiliarDeficienciaFisica': historicoFamiliarDeficienciaFisica,
+      'historicoFamiliarDeficienciaMental': historicoFamiliarDeficienciaMental,
+      'historicoFamiliarDoençaGenetica': historicoFamiliarDoencaGenetica,
+      'historicoDoadoraEpilepsia': historicoDoadoraEpilepsia,
+      'historicoDoadoraHipertensao': historicoDoadoraHipertensao,
+      'historicoDoadoraDiabetesMellitus': historicoDoadoraDiabetesMellitus,
+      'historicoDoadoraDeficienciaFisica': historicoDoadoraDeficienciaFisica,
+      'historicoDoadoraDoencasGeneticas': historicoDoadoraDoencasGeneticas,
+      'historicoDoadorasNeoplasias': historicoDoadorasNeoplasias,
+      'historicoDoadoraLabioLeporino': historicoDoadoraLabioLeporino,
+      'historicoDoadoraEspinhaBifida': historicoDoadoraEspinhaBifida,
+      'historicoDoadoraDeficienciaMental': historicoDoadoraDeficienciaMental,
+      'historicoDoadoraMalFormacaoCardica': historicoDoadoraMalFormacaoCardica,
+      'historicoDoadora': historicoDoadora,
+      'examesFeitos': exames.join(', '),
+      'status': status,
+      'assinatura': assinatura,
+      'email': email,
+      'telefone': telefone,
+      'cpf': cpf,
+      'rg': rg,
+      'cep': cep,
+      'endereco': endereco,
+      'cidade': cidade,
+      'estado': estado,
+      'dob': dob,
+      'medicoAssistente': medicoAssistente,
+      'motivo': motivo,
+      'declaroVeracidade': declaroVeracidade,
+      'caracteristicas1': caracteristicas1,
+      'idioma': idioma,
+      'quantidadeOvos': ovosDisponiveis,
+      'createdAt': createdAt != null ? Timestamp.fromDate(createdAt!) : null, // NEW: Save createdAt
+    };
   }
 }
 

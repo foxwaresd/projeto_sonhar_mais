@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../../banco_ovulos/pages/banco_ovulos_page.dart';
+import '../../banco_ovulos/pages/ovum_bank_screen.dart';
 import '../../dashboard/pages/dashboard_page.dart';
 import '../../administrativo/pages/administrativo_page.dart';
 import '../../doadoras/pages/doadoras_page.dart';
@@ -8,6 +8,7 @@ import '../../formulario/pages/forms/form_admin.dart';
 import '../../nascidos_vivos/pages/nascidos_vivos_page.dart';
 import '../../pareamento/pages/pareamento_page.dart';
 import '../../receptoras/pages/receptora_page.dart';
+import '../../reports/pages/reports_screen.dart';
 import '../widgets/side_menu.dart';
 
 class HomePage extends StatefulWidget {
@@ -28,14 +29,14 @@ class _HomePageState extends State<HomePage> {
         return const ModuloDoadorasPage();
       case 2:
         return const ModuloReceptorasPage();
-      case 5:
-        return const BancoOvulosPage();
-        case 3:
+      case 3:
+        return const OvumBankScreen();
+        case 4:
         return const PairingScreen();
-      case 4:
+      case 5:
         return const FormulariosScreen();
       case 6:
-        return const AdministrativoPage();
+        return const ReportsScreen();
       case 7:
         return const Center(child: Text('Saindo...'));
       default:

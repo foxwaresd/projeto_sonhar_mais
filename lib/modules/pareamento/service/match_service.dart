@@ -105,7 +105,7 @@ class MatchingService {
         donorId: donor.id,
         donorName: donor.nomeCompleto,
         donorPhotoUrl: donor.fotoPerfilUrl ?? 'https://via.placeholder.com/150',
-        eggCount: int.tryParse(donor.ovulos ?? '0') ?? 0,
+        eggCount: donor.quantidadeOvos ?? 0,
         phenotypePercentage: phenotypeScore * 100,
         photoPercentage: photoScore * 100,
         finalCompatibilityPercentage: finalScore * 100,

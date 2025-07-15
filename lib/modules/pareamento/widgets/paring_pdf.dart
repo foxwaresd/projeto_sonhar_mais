@@ -4,6 +4,7 @@ import 'package:printing/printing.dart';
 import 'package:http/http.dart' as http;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
+import 'package:projeto_sonhar_mais/modules/receptoras/pages/receptora_list_page.dart';
 
 // Assuming these imports are correctly pointing to your model classes
 import '../models/donor.dart';
@@ -36,7 +37,7 @@ Future<pw.MemoryImage?> _loadImageFromUrl(String? url) async {
 /// along with a compatibility [matchPercentage].
 /// The [receiver] object is currently not used in the PDF content but is
 /// kept in the signature as per the original code.
-Future<void> generateDonorMatchPdf(Donor donor, Receiver receiver, double matchPercentage) async {
+Future<void> generateDonorMatchPdf(Donor donor, Receptora receiver, double matchPercentage) async {
   final pdf = pw.Document();
 
   // --- Fetch Logo URL from Firebase ---
@@ -130,7 +131,7 @@ Future<void> generateDonorMatchPdf(Donor donor, Receiver receiver, double matchP
                 _buildInfoField('Idioma', donor.idioma),
               ]),
               _buildTwoColumnRow([
-                _buildInfoField('Óvulos Disponíveis', donor.ovulos?.toString()),
+                _buildInfoField('Óvulos Disponíveis', donor.quantidadeOvos ?.toString()),
               ]),
             ],
           ),

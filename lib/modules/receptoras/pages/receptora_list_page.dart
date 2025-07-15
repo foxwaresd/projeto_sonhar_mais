@@ -11,34 +11,31 @@ class Receptora {
   final String id;
   final String nomeCompleto;
   final String fotoPerfil;
-  final String observacao; // Não listado nos campos, mas mantido por ser genérico e importante
-  final String idade; // Não listado nos campos, mas mantido por ser genérico e importante
+  final String observacao;
+  final String idade;
 
-  // Campos de peso e altura originais (como string, para referência se necessário)
   final String? pesoOriginal;
   final String? alturaOriginal;
 
-  // Preferências para pareamento (campos do Firestore que você listou)
-  final String? tipoSanguineo1; // Do Firestore 'tipoSanguineo1'
-  final String? tipoSanguineo2; // Do Firestore 'tipoSanguineo2'
-  final String? corOlhos1;     // Do Firestore 'corOlhos1'
-  final String? corOlhos2;     // Do Firestore 'corOlhos2'
-  final String? corCabelo1;    // Do Firestore 'corCabelo1'
-  final String? corCabelo2;    // Do Firestore 'corCabelo2'
-  final String? tipoCabelo1;   // Do Firestore 'tipoCabelo1'
-  final String? tipoCabelo2;   // Do Firestore 'tipoCabelo2'
-  final String? raca1;         // Do Firestore 'raca1'
-  final String? raca2;         // Do Firestore 'raca2'
-  final String? corPeleFitzpatrick1; // Do Firestore 'fitzpatrick'
-  final String? corPeleFitzpatrick2; // Do Firestore 'fitzpatrick2'
+  final String? tipoSanguineo1;
+  final String? tipoSanguineo2;
+  final String? raca1;
+  final String? raca2;
+  final String? corPeleFitzpatrick1;
+  final String? corPeleFitzpatrick2;
+  final String? corOlhos1;
+  final String? corOlhos2;
+  final String? corCabelo1;
+  final String? corCabelo2;
+  final String? tipoCabelo1;
+  final String? tipoCabelo2;
 
-  // Campos numéricos convertidos para pareamento
   final double? altura1Cm;
   final double? altura2Cm;
   final double? peso1Kg;
   final double? peso2Kg;
+  final List<double>? faceEmbedding;
 
-  // Outros campos listados do Firestore
   final String assinatura;
   final String caracteristicas1;
   final String caracteristicas2;
@@ -61,16 +58,13 @@ class Receptora {
   final String fotoPrimeiraInfancia;
   final String fotoRecente;
   final String medicoAssistente;
-  final String ovulos; // Campo 'ovulos' encontrado na Receptora, mapeado como String
+  final String ovulos;
   final String rg;
   final String telefone;
-  final String status; // Status já com lógica de "Pendente Punção"
-  // O campo 'timestamp' não é mapeado diretamente para uma propriedade `final String`,
-  // pois geralmente é usado como um DateTime ou Timestamp object e não string.
-  // Ele ainda estará disponível via rawData se precisar.
+  final String status;
+  final DateTime? createdAt; // NEW: DateTime for creation timestamp
 
-
-  final Map<String, dynamic> rawData; // Para acessar qualquer outro campo não mapeado
+  final Map<String, dynamic> rawData;
 
   Receptora({
     required this.id,
@@ -96,6 +90,7 @@ class Receptora {
     this.altura2Cm,
     this.peso1Kg,
     this.peso2Kg,
+    this.faceEmbedding,
     required this.assinatura,
     required this.caracteristicas1,
     required this.caracteristicas2,
@@ -123,6 +118,7 @@ class Receptora {
     required this.telefone,
     required this.status,
     required this.rawData,
+    this.createdAt, // NEW: Add to constructor
   });
 
   factory Receptora.fromFirestore(Map<String, dynamic> data, String docId) {
@@ -136,17 +132,42 @@ class Receptora {
       return null;
     }
 
+    List<double>? embedding;
+    if (data['faceEmbedding'] != null && data['faceEmbedding'] is List) {
+      List<dynamic> rawList = data['faceEmbedding'];
+      List<double> tempList = [];
+      bool parseSuccess = true;
+
+      for (int i = 0; i < rawList.length; i++) {
+        var element = rawList[i];
+        if (element is num) {
+          tempList.add(element.toDouble());
+        } else {
+          parseSuccess = false;
+          break;
+        }
+      }
+      if (parseSuccess) {
+        embedding = tempList;
+      } else {
+        embedding = null;
+      }
+    }
+
+    // NEW: Parse createdAt Timestamp
+    DateTime? createdAt;
+    if (data['createdAt'] is Timestamp) {
+      createdAt = (data['createdAt'] as Timestamp).toDate();
+    }
+
     return Receptora(
       id: docId,
-      nomeCompleto: data['nomeCompleto'] ?? '',
+      nomeCompleto: data['nomeCompleto'] ?? 'Receptora Desconhecida',
       fotoPerfil: data['fotoPerfil'] ?? '',
-      observacao: data['observacao'] ?? '', // Manter, pois é comum e útil
-      idade: data['idade'] ?? '',           // Manter, pois é comum e útil
-
+      observacao: data['observacao'] ?? '',
+      idade: data['idade'] ?? '',
       pesoOriginal: data['peso1'],
       alturaOriginal: data['altura1'],
-
-      // Preferências para pareamento (garantindo UPPERCASE para comparação consistente)
       tipoSanguineo1: (data['tipoSanguineo1'] as String?)?.toUpperCase(),
       tipoSanguineo2: (data['tipoSanguineo2'] as String?)?.toUpperCase(),
       corOlhos1: (data['corOlhos1'] as String?)?.toUpperCase(),
@@ -157,18 +178,13 @@ class Receptora {
       tipoCabelo2: (data['tipoCabelo2'] as String?)?.toUpperCase(),
       raca1: (data['raca1'] as String?)?.toUpperCase(),
       raca2: (data['raca2'] as String?)?.toUpperCase(),
-      // Mapeamento de Fitzpatrick direto, assume que o valor no Firestore já é o completo.
-      // Se você precisar comparar apenas "1.1" vs "1.1", e o Firestore tem "1.1 - DESCRIÇÃO",
-      // você precisará de uma função para extrair o número.
       corPeleFitzpatrick1: (data['fitzpatrick'] as String?)?.toUpperCase(),
       corPeleFitzpatrick2: (data['fitzpatrick2'] as String?)?.toUpperCase(),
-
       altura1Cm: parseDouble(data['altura1']),
       altura2Cm: parseDouble(data['altura2']),
       peso1Kg: parseDouble(data['peso1']),
       peso2Kg: parseDouble(data['peso2']),
-
-      // Outros campos listados do Firestore
+      faceEmbedding: embedding,
       assinatura: data['assinatura'] ?? '',
       caracteristicas1: data['caracteristicas1'] ?? '',
       caracteristicas2: data['caracteristicas2'] ?? '',
@@ -191,13 +207,68 @@ class Receptora {
       fotoPrimeiraInfancia: data['fotoPrimeiraInfancia'] ?? '',
       fotoRecente: data['fotoRecente'] ?? '',
       medicoAssistente: data['medicoAssistente'] ?? '',
-      ovulos: data['ovulos'] ?? '', // Mapeado como String
+      ovulos: data['ovulos'] ?? '',
       rg: data['rg'] ?? '',
       telefone: data['telefone'] ?? '',
       status: (data['status'] == null || data['status'] == '') ? 'Iniciando a ficha' : data['status'],
-
       rawData: data,
+      createdAt: createdAt, // NEW: Assign parsed createdAt
     );
+  }
+
+  Map<String, dynamic> toFirestore() {
+    return {
+      'nomeCompleto': nomeCompleto,
+      'fotoPerfil': fotoPerfil,
+      'observacao': observacao,
+      'idade': idade,
+      'peso1': pesoOriginal,
+      'altura1': alturaOriginal,
+      'tipoSanguineo1': tipoSanguineo1,
+      'tipoSanguineo2': tipoSanguineo2,
+      'corOlhos1': corOlhos1,
+      'corOlhos2': corOlhos2,
+      'corCabelo1': corCabelo1,
+      'corCabelo2': corCabelo2,
+      'tipoCabelo1': tipoCabelo1,
+      'tipoCabelo2': tipoCabelo2,
+      'raca1': raca1,
+      'raca2': raca2,
+      'fitzpatrick': corPeleFitzpatrick1,
+      'fitzpatrick2': corPeleFitzpatrick2,
+      'altura1': altura1Cm,
+      'altura2': altura2Cm,
+      'peso1Kg': peso1Kg,
+      'peso2Kg': peso2Kg,
+      'faceEmbedding': faceEmbedding,
+      'assinatura': assinatura,
+      'caracteristicas1': caracteristicas1,
+      'caracteristicas2': caracteristicas2,
+      'cep': cep,
+      'cidade': cidade,
+      'clinica': clinica,
+      'cpf': cpf,
+      'declaroVeracidade': declaroVeracidade,
+      'email': email,
+      'endereco': endereco,
+      'estado': estado,
+      'fotoAdolescenciaFinal': fotoAdolescenciaFinal,
+      'fotoAdolescenciaInicial': fotoAdolescenciaInicial,
+      'fotoAdolescenciaMedia': fotoAdolescenciaMedia,
+      'fotoAdulto': fotoAdulto,
+      'fotoAdultoInicial': fotoAdultoInicial,
+      'fotoAdultoIntermediario': fotoAdultoIntermediario,
+      'fotoFaseAtual': fotoFaseAtual,
+      'fotoInfanciaIntermediaria': fotoInfanciaIntermediaria,
+      'fotoPrimeiraInfancia': fotoPrimeiraInfancia,
+      'fotoRecente': fotoRecente,
+      'medicoAssistente': medicoAssistente,
+      'ovulos': ovulos,
+      'rg': rg,
+      'telefone': telefone,
+      'status': status,
+      'createdAt': createdAt != null ? Timestamp.fromDate(createdAt!) : null, // NEW: Save createdAt
+    };
   }
 }
 

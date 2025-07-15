@@ -115,9 +115,10 @@ class SideMenu extends StatelessWidget {
     'Dashboard',
     'Doadoras',
     'Receptoras',
-    //'Banco de Óvulos',
+    'Banco de Óvulos',
     'Pareamento',
     'Formulário',
+    'Relatórios',
     //'Administrativo',
     'Sair',
   ];

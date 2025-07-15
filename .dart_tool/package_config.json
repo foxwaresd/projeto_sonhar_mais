@@ -278,6 +278,12 @@
       "languageVersion": "3.1"
     },
     {
+      "name": "fl_chart",
+      "rootUri": "file:///C:/Users/am-rj/AppData/Local/Pub/Cache/hosted/pub.dev/fl_chart-0.68.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.2"
+    },
+    {
       "name": "flutter",
       "rootUri": "file:///C:/Downloads/flutter_windows_3.24.3-stable/flutter/packages/flutter",
       "packageUri": "lib/",

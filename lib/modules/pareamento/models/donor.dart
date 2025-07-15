@@ -85,7 +85,7 @@ class Donor {
   final String? declaroVeracidade;
   final String? caracteristicas1;
   final String? idioma;
-  final String? ovulos; // Now included as a direct field
+  final int? quantidadeOvos; // Now included as a direct field
   final Map<String, dynamic> rawData; // Still useful for unmapped fields or debugging
 
   final List<double>? faceEmbedding;
@@ -168,7 +168,7 @@ class Donor {
     this.declaroVeracidade,
     this.caracteristicas1,
     this.idioma,
-    this.ovulos,
+    this.quantidadeOvos,
     this.faceEmbedding,
     required this.rawData,
   });
@@ -297,7 +297,7 @@ class Donor {
       declaroVeracidade: data['declaroVeracidade'],
       caracteristicas1: data['caracteristicas1'],
       idioma: data['idioma'],
-      ovulos: data['ovulos'],
+      quantidadeOvos: data['quantidadeOvos'] as int?,
       faceEmbedding: embedding,
       rawData: data, // Keep rawData for any unmapped fields
     );

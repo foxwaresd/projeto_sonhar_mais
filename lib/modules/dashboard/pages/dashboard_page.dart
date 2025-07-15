@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:projeto_sonhar_mais/core/theme/app_colors.dart';
-import '../../../common/widgets/filters.dart'; // Ensure filter_options is imported
+import '../../../common/widgets/filters.dart';
 import '../../doadoras/pages/doadora_list_page.dart'; // Ensure Doadora class is accessible
 import '../../receptoras/pages/receptora_list_page.dart'; // Import Receptora class
-
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -14,25 +13,20 @@ class DashboardPage extends StatefulWidget {
 }
 
 class _DashboardPageState extends State<DashboardPage> {
-  // Map to hold selected dropdown values for dynamic counts for Doadoras
   Map<String, String?> _selectedDoadoraCounts = {};
-  // Map to hold selected dropdown values for dynamic counts for Receptoras
   Map<String, String?> _selectedReceptoraCounts = {};
 
   @override
   void initState() {
     super.initState();
-    // Initialize selected dropdown values to null for all doadora categories
     for (var category in FilterCategory.allCategories) {
       _selectedDoadoraCounts[category.attributeName] = null;
     }
-    // Initialize selected dropdown values to null for all receptora categories
     for (var category in FilterCategory.allCategories) {
       _selectedReceptoraCounts[category.attributeName] = null;
     }
   }
 
-  // Helper method to dynamically get doadora attribute value
   String _getDoadoraAttribute(Doadora doadora, String attributeName) {
     switch (attributeName) {
       case 'tipoSanguineo1':
@@ -52,7 +46,6 @@ class _DashboardPageState extends State<DashboardPage> {
     }
   }
 
-  // Helper method to dynamically get receptora attribute value
   String _getReceptoraAttribute(Receptora receptora, String attributeName) {
     switch (attributeName) {
       case 'tipoSanguineo1':
@@ -69,7 +62,6 @@ class _DashboardPageState extends State<DashboardPage> {
         return '';
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -108,13 +100,11 @@ class _DashboardPageState extends State<DashboardPage> {
 
               final rawReceptoraDocs = receptorasSnapshot.data!.docs;
 
-              // --- Dashboard Sections ---
               return SingleChildScrollView(
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // 1. Visão Geral (Doadoras e Receptoras Lado a Lado)
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -131,16 +121,23 @@ class _DashboardPageState extends State<DashboardPage> {
                               const SizedBox(height: 16),
                               _buildInfoCard(
                                 title: 'Óvulos Disponíveis',
-                                count: rawDoadoraDocs.fold<int>(0, (sum, doc) {
+                                count: rawDoadoraDocs.fold<int>(0, (int sum, QueryDocumentSnapshot doc) { // Explicitly define sum as int
                                   final data = doc.data() as Map<String, dynamic>;
-                                  return sum + (int.tryParse(data['quantidadeOvos'] ?? '0') ?? 0);
+                                  final dynamic quantidadeOvos = data['quantidadeOvos'];
+                                  int parsedQuantity = 0;
+                                  if (quantidadeOvos is num) { // Check if it's a number
+                                    parsedQuantity = quantidadeOvos.toInt();
+                                  } else if (quantidadeOvos is String) { // Or a string that can be parsed
+                                    parsedQuantity = int.tryParse(quantidadeOvos) ?? 0;
+                                  }
+                                  return sum + parsedQuantity;
                                 }),
                                 icon: Icons.egg,
                               ),
                             ],
                           ),
                         ),
-                        const SizedBox(width: 16), // Espaçamento entre as colunas
+                        const SizedBox(width: 16),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -149,16 +146,23 @@ class _DashboardPageState extends State<DashboardPage> {
                               _buildInfoCard(
                                 title: 'Total de Receptoras',
                                 count: allReceptoras.length,
-                                icon: Icons.pregnant_woman, // Ícone para receptoras
+                                icon: Icons.pregnant_woman,
                               ),
                               const SizedBox(height: 16),
                               _buildInfoCard(
                                 title: 'Óvulos Desejados',
-                                count: rawReceptoraDocs.fold<int>(0, (sum, doc) {
+                                count: rawReceptoraDocs.fold<int>(0, (int sum, QueryDocumentSnapshot doc) { // Explicitly define sum as int
                                   final data = doc.data() as Map<String, dynamic>;
-                                  return sum + (int.tryParse(data['ovulosDesejados'] ?? '0') ?? 0);
+                                  final dynamic ovulosDesejados = data['ovulosDesejados'];
+                                  int parsedDesiredOvulos = 0;
+                                  if (ovulosDesejados is num) {
+                                    parsedDesiredOvulos = ovulosDesejados.toInt();
+                                  } else if (ovulosDesejados is String) {
+                                    parsedDesiredOvulos = int.tryParse(ovulosDesejados) ?? 0;
+                                  }
+                                  return sum + parsedDesiredOvulos;
                                 }),
-                                icon: Icons.baby_changing_station, // Outro ícone para óvulos desejados
+                                icon: Icons.baby_changing_station,
                               ),
                             ],
                           ),
@@ -166,7 +170,6 @@ class _DashboardPageState extends State<DashboardPage> {
                       ],
                     ),
 
-                    // 2. Doadoras por Categoria
                     const SizedBox(height: 24),
                     _buildSectionTitle('Doadoras por Categoria'),
                     GridView.builder(
@@ -207,7 +210,6 @@ class _DashboardPageState extends State<DashboardPage> {
                       },
                     ),
 
-                    // 3. Receptoras por Categoria
                     const SizedBox(height: 24),
                     _buildSectionTitle('Receptoras por Categoria'),
                     GridView.builder(
@@ -257,7 +259,6 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  // Helper widget to build section titles
   Widget _buildSectionTitle(String title) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -276,7 +277,6 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  // Helper widget to build the info cards (for general overview)
   Widget _buildInfoCard({required String title, required int count, required IconData icon}) {
     return Card(
       elevation: 4,
@@ -312,7 +312,6 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  // New helper widget to build category cards (reused for Doadoras and Receptoras)
   Widget _buildCategoryCard(
       String title,
       String? currentValue,
@@ -380,7 +379,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     ),
                   ),
                   Text(
-                    currentValue != null ? 'itens' : 'total', // Changed to 'itens'
+                    currentValue != null ? 'itens' : 'total',
                     style: TextStyle(fontSize: 11, color: Colors.grey[600]),
                     textAlign: TextAlign.center,
                   ),

@@ -312,9 +312,6 @@ Future<void> generateDoadoraPdf(Doadora doadora) async {
                 _buildInfoField('Motivo da Doação', doadora.motivo),
               ]),
               _buildInfoField('Declaração de Veracidade', doadora.declaroVeracidade),
-              _buildTwoColumnRow([
-                _buildInfoField('Óvulos Coletados', doadora.ovulos),
-              ]),
             ],
           ),
         ];
